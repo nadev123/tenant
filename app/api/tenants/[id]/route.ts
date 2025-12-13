@@ -3,10 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { validateDomain } from "@/lib/validation";
 import { verifyToken } from "@/lib/auth";
 
-export async function GET(
-  req: NextRequest,
-  { params, searchParams }: { params: { [key: string]: string }; searchParams: URLSearchParams }
-) {
+export async function GET(req: NextRequest, { params, searchParams }) {
   try {
     const tenant = await prisma.tenant.findUnique({ where: { id: params.id } });
 
@@ -21,10 +18,7 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  req: NextRequest,
-  { params, searchParams }: { params: { [key: string]: string }; searchParams: URLSearchParams }
-) {
+export async function PUT(req: NextRequest, { params, searchParams }) {
   try {
     const token = req.cookies.get("auth-token")?.value;
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

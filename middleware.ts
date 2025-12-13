@@ -7,6 +7,7 @@ export async function middleware(request: NextRequest) {
   const forwardedProto = request.headers.get("x-forwarded-proto");
   const hostname = forwardedHost || request.headers.get("host") || "";
   const pathname = request.nextUrl.pathname;
+  const debugFlag = request.nextUrl.searchParams.get("__middleware_debug") === "1" || pathname === "/__middleware_debug";
 
   // Extract subdomain/custom domain
   const hostnameParts = hostname.split(".");
@@ -37,11 +38,31 @@ export async function middleware(request: NextRequest) {
 
   // If no subdomain, attempt to resolve a custom domain to a tenant via internal API
   try {
+    // Debug: log resolved host and forwarded headers
+    console.log("middleware: hostname=", hostname, "forwardedHost=", forwardedHost, "forwardedProto=", forwardedProto, "pathname=", pathname);
     // Forward original host header so the API can resolve custom domains correctly
     const tenantRes = await fetch(new URL("/api/tenants/current", request.url).toString(), {
-      headers: { host: hostname, "x-forwarded-proto": forwardedProto || request.nextUrl.protocol.replace(":", "") },
+      headers: {
+        host: hostname,
+        "x-forwarded-host": hostname,
+        "x-forwarded-proto": forwardedProto || request.nextUrl.protocol.replace(":", ""),
+      },
       method: "GET",
     });
+
+    console.log("middleware: tenantRes status=", tenantRes.status);
+
+    // If debug, return a small HTML page with details for easier inspection in browser
+    if (debugFlag) {
+      let jsonBody = null;
+      try {
+        jsonBody = await tenantRes.clone().json();
+      } catch (e) {
+        jsonBody = null;
+      }
+      const bodyHtml = `<!doctype html><html><head><meta charset="utf-8"><title>Middleware Debug</title></head><body><h1>Middleware Debug</h1><pre>hostname: ${hostname}\nforwardedHost: ${forwardedHost}\nforwardedProto: ${forwardedProto}\npathname: ${pathname}\ntenantRes.status: ${tenantRes.status}\ntenantRes.body: ${JSON.stringify(jsonBody, null, 2)}</pre></body></html>`;
+      return new Response(bodyHtml, { headers: { "content-type": "text/html; charset=utf-8" } });
+    }
 
     if (tenantRes.ok) {
       const json = await tenantRes.json();

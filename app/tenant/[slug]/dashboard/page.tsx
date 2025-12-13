@@ -26,7 +26,8 @@ export default function TenantDashboard() {
         const res = await fetch(`/api/tenants/slug/${tenantSlug}`);
         if (!res.ok) {
           setError("Failed to load tenant");
-          router.push("/dashboard");
+          // don't navigate back to /dashboard here — middleware will rewrite
+          // and this can cause a redirect loop in proxied environments
           return;
         }
         const data = await res.json();

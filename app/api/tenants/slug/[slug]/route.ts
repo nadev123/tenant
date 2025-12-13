@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getTenantBySlug } from "@/lib/db";
 
-export async function GET(request: NextRequest, { params, searchParams }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
   try {
-    const { slug } = params; // params is inferred by Next.js
+    const { slug } = await params; // params is a Promise in Next.js 15
     const tenant = await getTenantBySlug(slug);
 
     if (!tenant) {

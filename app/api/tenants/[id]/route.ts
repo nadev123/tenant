@@ -3,9 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { validateDomain } from "@/lib/validation";
 import { verifyToken } from "@/lib/auth";
 
-export async function GET(request: NextRequest, context) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = context.params; // context.params.id is automatically typed
+    const { id } = await params; // params is a Promise in Next.js 15
     const tenant = await prisma.tenant.findUnique({ where: { id } });
 
     if (!tenant) {
@@ -19,9 +22,12 @@ export async function GET(request: NextRequest, context) {
   }
 }
 
-export async function PUT(request: NextRequest, context) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = context.params;
+    const { id } = await params;
     const token = request.cookies.get("auth-token")?.value;
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

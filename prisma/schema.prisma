@@ -1,0 +1,55 @@
+// prisma/schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  tenants       Tenant[]  @relation("UserTenants")
+}
+
+model Tenant {
+  id              String    @id @default(cuid())
+  name            String
+  slug            String    @unique
+  customDomain    String?   @unique
+  logo            String?
+  description     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  users           User[]    @relation("UserTenants")
+  pages           Page[]
+  settings        Settings?
+}
+
+model Page {
+  id        String    @id @default(cuid())
+  title     String
+  slug      String
+  content   String    @db.Text
+  published Boolean   @default(false)
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([tenantId, slug])
+}
+
+model Settings {
+  id       String  @id @default(cuid())
+  tenantId String  @unique
+  tenant   Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  theme    String  @default("light")
+  language String  @default("en")
+}

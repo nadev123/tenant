@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  const hostname = request.headers.get("host") || "";
+  // Prefer proxy-forwarded host/proto when available (CyberPanel/nginx)
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  const hostname = forwardedHost || request.headers.get("host") || "";
   const pathname = request.nextUrl.pathname;
 
   // Extract subdomain/custom domain
@@ -34,8 +37,9 @@ export async function middleware(request: NextRequest) {
 
   // If no subdomain, attempt to resolve a custom domain to a tenant via internal API
   try {
+    // Forward original host header so the API can resolve custom domains correctly
     const tenantRes = await fetch(new URL("/api/tenants/current", request.url).toString(), {
-      headers: { host: hostname },
+      headers: { host: hostname, "x-forwarded-proto": forwardedProto || request.nextUrl.protocol.replace(":", "") },
       method: "GET",
     });
 

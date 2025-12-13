@@ -3,9 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { validateDomain } from "@/lib/validation";
 import { verifyToken } from "@/lib/auth";
 
-export async function GET(req: NextRequest, { params, searchParams }) {
+export async function GET(request: NextRequest, context) {
   try {
-    const tenant = await prisma.tenant.findUnique({ where: { id: params.id } });
+    const { id } = context.params; // context.params.id is automatically typed
+    const tenant = await prisma.tenant.findUnique({ where: { id } });
 
     if (!tenant) {
       return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
@@ -18,15 +19,16 @@ export async function GET(req: NextRequest, { params, searchParams }) {
   }
 }
 
-export async function PUT(req: NextRequest, { params, searchParams }) {
+export async function PUT(request: NextRequest, context) {
   try {
-    const token = req.cookies.get("auth-token")?.value;
+    const { id } = context.params;
+    const token = request.cookies.get("auth-token")?.value;
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const decoded = verifyToken(token);
     if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
-    const body = await req.json();
+    const body = await request.json();
     const { name, description, customDomain } = body;
 
     if (customDomain && customDomain.trim()) {
@@ -35,13 +37,13 @@ export async function PUT(req: NextRequest, { params, searchParams }) {
       }
 
       const existingDomain = await prisma.tenant.findUnique({ where: { customDomain } });
-      if (existingDomain && existingDomain.id !== params.id) {
+      if (existingDomain && existingDomain.id !== id) {
         return NextResponse.json({ error: "Domain already in use" }, { status: 400 });
       }
     }
 
     const tenant = await prisma.tenant.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name: name || undefined,
         description: description || undefined,

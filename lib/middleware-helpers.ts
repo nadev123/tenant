@@ -33,16 +33,24 @@ export async function withAuth(
 }
 
 export function setAuthCookie(response: NextResponse, token: string, domain?: string) {
+  const isProd = process.env.NODE_ENV === "production";
+
   const cookieOptions: any = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProd, // require https in production
+    // for cross-site requests behind proxies, None+Secure is often required
+    sameSite: isProd ? "none" : "lax",
     maxAge: 30 * 24 * 60 * 60, // 30 days
     path: "/",
   };
 
-  if (domain) {
-    cookieOptions.domain = domain;
+  // Only set a domain when it looks like a proper domain (not localhost or an IP without dot)
+  if (domain && typeof domain === "string") {
+    const d = domain.replace(/^\./, "");
+    const looksLikePublicDomain = d.includes(".") && !d.startsWith("localhost") && !/^\d+\.\d+\.\d+\.\d+$/.test(d);
+    if (looksLikePublicDomain) {
+      cookieOptions.domain = domain;
+    }
   }
 
   response.cookies.set("auth-token", token, cookieOptions);

@@ -63,7 +63,10 @@ export async function POST(request: NextRequest) {
     // Determine possible redirect target: customDomain (if set) or tenant subdomain
     const tenantHost = firstTenant.customDomain || null;
 
-    const hostHeader = request.headers.get("host") || ""; // includes port
+    // Respect reverse-proxy headers (CyberPanel / other proxies may set X-Forwarded-*).
+    const forwardedHost = request.headers.get("x-forwarded-host");
+    const hostHeader = forwardedHost || request.headers.get("host") || ""; // includes port
+    const forwardedProto = request.headers.get("x-forwarded-proto");
     const hostnameOnly = hostHeader.split(":")[0];
     const port = hostHeader.split(":")[1] ? `:${hostHeader.split(":")[1]}` : "";
 
@@ -73,7 +76,7 @@ export async function POST(request: NextRequest) {
     // If we have a reachable host and it's not localhost, perform a server-side redirect and set cookie domain
     if (tenantHost && !isLocalhost) {
       // Redirect to custom domain (use https when in production)
-      const protocol = request.nextUrl.protocol || (process.env.NODE_ENV === "production" ? "https:" : "http:");
+      const protocol = forwardedProto ? `${forwardedProto}:` : (request.nextUrl.protocol || (process.env.NODE_ENV === "production" ? "https:" : "http:"));
       const redirectUrl = `${protocol}//${tenantHost}/dashboard`;
 
       const response = NextResponse.redirect(redirectUrl, 302);
@@ -88,7 +91,7 @@ export async function POST(request: NextRequest) {
       const rootHost = hostnameOnly;
       const domain = `.${rootHost}`;
       const redirectHost = `${firstTenant.slug}.${rootHost}${port}`;
-      const protocol = request.nextUrl.protocol || (process.env.NODE_ENV === "production" ? "https:" : "http:");
+      const protocol = forwardedProto ? `${forwardedProto}:` : (request.nextUrl.protocol || (process.env.NODE_ENV === "production" ? "https:" : "http:"));
       const redirectUrl = `${protocol}//${redirectHost}/dashboard`;
 
       const response = NextResponse.redirect(redirectUrl, 302);

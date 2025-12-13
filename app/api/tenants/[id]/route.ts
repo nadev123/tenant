@@ -5,7 +5,7 @@ import { verifyToken } from "@/lib/auth";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params, searchParams }: { params: { [key: string]: string }; searchParams: URLSearchParams }
 ) {
   try {
     const tenant = await prisma.tenant.findUnique({ where: { id: params.id } });
@@ -23,7 +23,7 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params, searchParams }: { params: { [key: string]: string }; searchParams: URLSearchParams }
 ) {
   try {
     const token = req.cookies.get("auth-token")?.value;

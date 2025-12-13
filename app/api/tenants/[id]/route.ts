@@ -3,17 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { validateDomain } from "@/lib/validation";
 import { verifyToken } from "@/lib/auth";
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
-export async function GET(req: NextRequest, { params }: RouteParams) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: params.id },
-    });
+    const tenant = await prisma.tenant.findUnique({ where: { id: params.id } });
 
     if (!tenant) {
       return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
@@ -26,18 +21,16 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function PUT(req: NextRequest, { params }: RouteParams) {
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const token = req.cookies.get("auth-token")?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const decoded = verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
+    if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
     const body = await req.json();
     const { name, description, customDomain } = body;
@@ -47,10 +40,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
         return NextResponse.json({ error: "Invalid domain format" }, { status: 400 });
       }
 
-      const existingDomain = await prisma.tenant.findUnique({
-        where: { customDomain },
-      });
-
+      const existingDomain = await prisma.tenant.findUnique({ where: { customDomain } });
       if (existingDomain && existingDomain.id !== params.id) {
         return NextResponse.json({ error: "Domain already in use" }, { status: 400 });
       }

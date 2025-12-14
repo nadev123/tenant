@@ -37,17 +37,16 @@ export default function SignIn() {
         return;
       }
 
-      // ✅ Redirect safely
-      const callbackUrl = data?.url || "/dashboard"; // NextAuth returns `url` if redirect needed
+      // ✅ Safe redirect
+      const callbackUrl = data?.url || "/dashboard";
 
-      // Only redirect if callbackUrl exists
       if (callbackUrl) {
-        // Use absolute URL for production, relative for localhost
         const isLocal = window.location.hostname.includes("localhost");
         if (isLocal) {
-          router.push(callbackUrl); // relative URL works locally
+          // relative URL works locally
+          router.push(callbackUrl);
         } else {
-          // Use full absolute URL for production
+          // production: absolute URL to current host
           const proto = window.location.protocol;
           const host = window.location.hostname; // e.g., tenant.n6n.net
           window.location.href = `${proto}//${host}${callbackUrl}`;
@@ -118,7 +117,7 @@ export default function SignIn() {
         </form>
 
         <p className="text-center mt-4 text-gray-600">
-          Dont have an account?{" "}
+          Don't have an account?{" "}
           <Link href="/signup" className="text-indigo-600 hover:underline">
             Sign Up
           </Link>

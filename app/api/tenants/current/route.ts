@@ -1,14 +1,31 @@
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { getTenantByDomain } from "@/lib/db";
+
+const BASE_DOMAIN = "tenant.n6n.net";
 
 export async function GET(request: NextRequest) {
   try {
-    const hostname = request.headers.get("host") || "";
-    
-    const tenant = await getTenantByDomain(hostname);
+    const forwardedHost = request.headers.get("x-forwarded-host");
+    const host =
+      (forwardedHost ?? request.headers.get("host") ?? "")
+        .split(",")[0]
+        .trim();
+
+    const hostname = host.split(":")[0];
+
+    let lookupDomain = hostname;
+
+    // Convert test.tenant.n6n.net → test
+    if (
+      hostname.endsWith(`.${BASE_DOMAIN}`) &&
+      hostname !== BASE_DOMAIN
+    ) {
+      lookupDomain = hostname.replace(`.${BASE_DOMAIN}`, "");
+    }
+
+    const tenant = await getTenantByDomain(lookupDomain);
 
     if (!tenant) {
       return NextResponse.json(

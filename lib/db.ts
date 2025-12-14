@@ -10,27 +10,15 @@ export async function getTenantBySlug(slug: string) {
 }
 
 export async function getTenantByDomain(domain: string) {
-  // Check if it's a custom domain or subdomain
-  const parts = domain.split(".");
-  
-  // Check custom domain first
-  const customDomain = await prisma.tenant.findUnique({
-    where: { customDomain: domain },
+  return prisma.tenant.findFirst({
+    where: {
+      OR: [
+        { slug: domain },
+        { customDomain: domain },
+      ],
+    },
     include: { settings: true },
   });
-  
-  if (customDomain) return customDomain;
-  
-  // Check subdomain
-  if (parts.length > 2) {
-    const subdomain = parts[0];
-    return prisma.tenant.findUnique({
-      where: { slug: subdomain },
-      include: { settings: true },
-    });
-  }
-  
-  return null;
 }
 
 export async function getUserWithTenants(userId: string) {

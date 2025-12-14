@@ -3,11 +3,10 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { getTenantBySlug } from "@/lib/db";
 
-interface Params {
-  params: { slug: string };
-}
-
-export async function GET(request: NextRequest, { params }: Params) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { slug: string } }
+) {
   try {
     const { slug } = params;
     const tenant = await getTenantBySlug(slug);
@@ -18,7 +17,7 @@ export async function GET(request: NextRequest, { params }: Params) {
 
     return NextResponse.json({ tenant });
   } catch (error) {
-    console.error("Get tenant error:", error);
+    console.error("Get tenant by slug error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

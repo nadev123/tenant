@@ -5,11 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { validateDomain } from "@/lib/validation";
 import { verifyToken } from "@/lib/auth";
 
-interface Params {
-  params: { id: string };
-}
-
-export async function GET(request: NextRequest, { params }: Params) {
+// GET /api/tenants/[id]
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
     const tenant = await prisma.tenant.findUnique({ where: { id } });
@@ -25,9 +22,11 @@ export async function GET(request: NextRequest, { params }: Params) {
   }
 }
 
-export async function PUT(request: NextRequest, { params }: Params) {
+// PUT /api/tenants/[id]
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
+
     const token = request.cookies.get("auth-token")?.value;
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

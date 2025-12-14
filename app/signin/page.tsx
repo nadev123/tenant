@@ -15,10 +15,7 @@ export default function SignIn() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,29 +37,29 @@ export default function SignIn() {
         return;
       }
 
-      // If API returned a tenant slug, redirect to that tenant's subdomain dashboard
-      const tenantSlug = data?.tenant?.slug;
-      if (tenantSlug) {
-        const hostname = window.location.hostname; // e.g. 'localhost' or 'example.com'
-        const port = window.location.port ? `:${window.location.port}` : "";
-        let newHost = "";
+      // ✅ Redirect safely
+      const callbackUrl = data?.url || "/dashboard"; // NextAuth returns `url` if redirect needed
 
-        if (hostname === "localhost") {
-          newHost = `${tenantSlug}.localhost${port}`;
+      // Only redirect if callbackUrl exists
+      if (callbackUrl) {
+        // Use absolute URL for production, relative for localhost
+        const isLocal = window.location.hostname.includes("localhost");
+        if (isLocal) {
+          router.push(callbackUrl); // relative URL works locally
         } else {
-          newHost = `${tenantSlug}.${hostname}${port}`;
+          // Use full absolute URL for production
+          const proto = window.location.protocol;
+          const host = window.location.hostname; // e.g., tenant.n6n.net
+          window.location.href = `${proto}//${host}${callbackUrl}`;
         }
-
-        // Force full-page navigation to ensure host change
-        window.location.href = `${window.location.protocol}//${newHost}/dashboard`;
         return;
       }
 
-      // Fallback to main dashboard
+      // Fallback
       router.push("/dashboard");
     } catch (err) {
-      setError("An error occurred. Please try again.");
       console.error(err);
+      setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -121,7 +118,7 @@ export default function SignIn() {
         </form>
 
         <p className="text-center mt-4 text-gray-600">
-          Dont have an account?{" "}
+          Don't have an account?{" "}
           <Link href="/signup" className="text-indigo-600 hover:underline">
             Sign Up
           </Link>

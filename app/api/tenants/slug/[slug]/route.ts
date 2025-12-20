@@ -5,10 +5,11 @@ import { getTenantBySlug } from "@/lib/db";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: any
 ) {
   try {
-    const { slug } = await params;
+    const { slug } = context.params;
+
     const tenant = await getTenantBySlug(slug);
 
     if (!tenant) {

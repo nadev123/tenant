@@ -1,19 +1,19 @@
 export const runtime = "nodejs";
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateDomain } from "@/lib/validation";
 import { verifyToken } from "@/lib/auth";
 
 // GET /api/tenants/[id]
 export async function GET(
-  request: Request,
-  context: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
-  const { id } = context.params;
-
   try {
-    const tenant = await prisma.tenant.findUnique({ where: { id } });
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: params.id },
+    });
 
     if (!tenant) {
       return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
@@ -28,16 +28,11 @@ export async function GET(
 
 // PUT /api/tenants/[id]
 export async function PUT(
-  request: Request,
-  context: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
-  const { id } = context.params;
-
   try {
-    const token = request.headers
-      .get("cookie")
-      ?.match(/auth-token=([^;]+)/)?.[1];
-
+    const token = request.cookies.get("auth-token")?.value;
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -59,13 +54,13 @@ export async function PUT(
         where: { customDomain },
       });
 
-      if (existingDomain && existingDomain.id !== id) {
+      if (existingDomain && existingDomain.id !== params.id) {
         return NextResponse.json({ error: "Domain already in use" }, { status: 400 });
       }
     }
 
     const tenant = await prisma.tenant.update({
-      where: { id },
+      where: { id: params.id },
       data: {
         name: name || undefined,
         description: description || undefined,

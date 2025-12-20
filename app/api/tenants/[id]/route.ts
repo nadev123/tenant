@@ -8,10 +8,11 @@ import { verifyToken } from "@/lib/auth";
 // GET /api/tenants/[id]
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  const { id } = context.params;
+
   try {
-    const { id } = params;
     const tenant = await prisma.tenant.findUnique({ where: { id } });
 
     if (!tenant) {
@@ -28,11 +29,11 @@ export async function GET(
 // PUT /api/tenants/[id]
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
-  try {
-    const { id } = params;
+  const { id } = context.params;
 
+  try {
     const token = request.headers
       .get("cookie")
       ?.match(/auth-token=([^;]+)/)?.[1];

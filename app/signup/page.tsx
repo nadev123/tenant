@@ -69,7 +69,7 @@ export default function SignUp() {
       }
 
       // Redirect to dashboard
-      router.push(`/${formData.tenantSlug}/dashboard`);
+      router.push(`/${formData.tenantSlug}/signin`);
     } catch (err) {
       setError("An error occurred. Please try again.");
       console.error(err);

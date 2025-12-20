@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: { slug: string } }
 ) {
   try {
-    const { slug } = params;
+    const { slug } = await params;
     const tenant = await getTenantBySlug(slug);
 
     if (!tenant) {

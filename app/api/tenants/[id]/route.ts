@@ -1,12 +1,15 @@
 export const runtime = "nodejs";
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateDomain } from "@/lib/validation";
 import { verifyToken } from "@/lib/auth";
 
 // GET /api/tenants/[id]
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const { id } = params;
     const tenant = await prisma.tenant.findUnique({ where: { id } });
@@ -23,15 +26,25 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 // PUT /api/tenants/[id]
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const { id } = params;
 
-    const token = request.cookies.get("auth-token")?.value;
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const token = request.headers
+      .get("cookie")
+      ?.match(/auth-token=([^;]+)/)?.[1];
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const decoded = verifyToken(token);
-    if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    if (!decoded) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
 
     const body = await request.json();
     const { name, description, customDomain } = body;
@@ -41,7 +54,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     if (customDomain) {
-      const existingDomain = await prisma.tenant.findUnique({ where: { customDomain } });
+      const existingDomain = await prisma.tenant.findUnique({
+        where: { customDomain },
+      });
+
       if (existingDomain && existingDomain.id !== id) {
         return NextResponse.json({ error: "Domain already in use" }, { status: 400 });
       }

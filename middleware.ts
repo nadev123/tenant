@@ -57,7 +57,7 @@ export function middleware(request: NextRequest) {
 
     const target =
       pathname === "/"
-        ? `/tenant/${subdomain}/dashboard`
+        ? `/tenant/${subdomain}/`
         : `/tenant/${subdomain}${pathname}`;
 
     return NextResponse.rewrite(new URL(target, request.url));

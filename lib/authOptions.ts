@@ -1,8 +1,10 @@
 // lib/authOptions.ts
+import type { NextAuthOptions } from "next-auth";
+import type { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./prisma";
 
-export const authOptions = {
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -10,8 +12,9 @@ export const authOptions = {
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
+
       async authorize(credentials) {
-        if (!credentials) return null;
+        if (!credentials?.email || !credentials.password) return null;
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
@@ -20,7 +23,7 @@ export const authOptions = {
 
         if (!user) return null;
 
-        // Simple password check, replace with hash comparison
+        // ⚠️ Replace with bcrypt compare in production
         if (credentials.password !== user.password) return null;
 
         return {
@@ -32,16 +35,33 @@ export const authOptions = {
       },
     }),
   ],
-  session: { strategy: "jwt" },
+
+  session: {
+    strategy: "jwt",
+  },
+
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({
+      token,
+      user,
+    }: {
+      token: JWT & { userId?: string; tenantId?: string };
+      user?: any;
+    }) {
       if (user) {
         token.userId = user.id;
         token.tenantId = user.tenantId;
       }
       return token;
     },
-    async session({ session, token }) {
+
+    async session({
+      session,
+      token,
+    }: {
+      session: any;
+      token: JWT & { userId?: string; tenantId?: string };
+    }) {
       if (session.user) {
         session.user.id = token.userId;
         session.user.tenantId = token.tenantId;
@@ -49,5 +69,8 @@ export const authOptions = {
       return session;
     },
   },
-  pages: { signIn: "/auth/signin" },
+
+  pages: {
+    signIn: "/auth/signin",
+  },
 };

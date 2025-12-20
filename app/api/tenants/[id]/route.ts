@@ -8,11 +8,13 @@ import { verifyToken } from "@/lib/auth";
 // GET /api/tenants/[id]
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: any
 ) {
   try {
+    const { id } = context.params;
+
     const tenant = await prisma.tenant.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!tenant) {
@@ -29,9 +31,11 @@ export async function GET(
 // PUT /api/tenants/[id]
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: any
 ) {
   try {
+    const { id } = context.params;
+
     const token = request.cookies.get("auth-token")?.value;
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -54,13 +58,13 @@ export async function PUT(
         where: { customDomain },
       });
 
-      if (existingDomain && existingDomain.id !== params.id) {
+      if (existingDomain && existingDomain.id !== id) {
         return NextResponse.json({ error: "Domain already in use" }, { status: 400 });
       }
     }
 
     const tenant = await prisma.tenant.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name: name || undefined,
         description: description || undefined,
